@@ -1,13 +1,13 @@
 {
-  "updated": "2026-10-08 23:50 LIVE UTC",
+  "updated": "2026-10-08 23:58 LIVE UTC",
   "live": true,
   "sources": [
-    "LIVE https://pif.finance/crypto-halal-reports Comfortable (login)",
-    "LIVE https://cryptohalal.cc/ar مباح"
+    "PIF",
+    "CH"
   ],
   "counts": {
-    "pif_comfortable": 0,
-    "cryptohalal_mubah": 8
+    "pif": 0,
+    "ch": 8
   },
   "count": 8,
   "coins": [
