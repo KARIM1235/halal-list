@@ -15,11 +15,10 @@ jobs:
           python-version: '3.11'
       - run: pip install playwright requests
       - run: playwright install --with-deps chromium
-      - env:
+      - name: Run scraper LIVE from your sites
+        env:
           PIF_EMAIL: ${{ secrets.PIF_EMAIL }}
           PIF_PASSWORD: ${{ secrets.PIF_PASSWORD }}
-          CH_EMAIL: ${{ secrets.CH_EMAIL }}
-          CH_PASSWORD: ${{ secrets.CH_PASSWORD }}
         run: python scraper.py
       - run: |
           git config user.name "halal-bot"
