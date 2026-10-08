@@ -13,9 +13,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install playwright playwright-stealth requests
+      - run: pip install playwright requests
       - run: playwright install --with-deps chromium
-      - run: python scraper.py
+      - env:
+          PIF_EMAIL: ${{ secrets.PIF_EMAIL }}
+          PIF_PASSWORD: ${{ secrets.PIF_PASSWORD }}
+          CH_EMAIL: ${{ secrets.CH_EMAIL }}
+          CH_PASSWORD: ${{ secrets.CH_PASSWORD }}
+        run: python scraper.py
       - run: |
           git config user.name "halal-bot"
           git config user.email "bot@example.com"
