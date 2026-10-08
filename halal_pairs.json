@@ -1,10 +1,37 @@
 {
-  "updated": "auto from GitHub Actions",
+  "updated": "2026-10-08 23:37 LIVE UTC",
+  "live": true,
   "sources": [
-    "pif.finance/crypto-halal-reports Comfortable",
-    "cryptohalal.cc/ar مباح"
+    "LIVE https://pif.finance/crypto-halal-reports Comfortable ONLY (logged in)",
+    "LIVE https://cryptohalal.cc/ar مباح ONLY"
   ],
-  "count": 0,
-  "coins": [],
-  "pairs": []
+  "counts": {
+    "pif_comfortable": 0,
+    "cryptohalal_mubah": 10
+  },
+  "count": 10,
+  "coins": [
+    "BNB",
+    "BTC",
+    "DOGE",
+    "ETH",
+    "SOL",
+    "TRON",
+    "USDC",
+    "USDT",
+    "XRP",
+    "ZEC"
+  ],
+  "pairs": [
+    "BNB/USDT",
+    "BTC/USDT",
+    "DOGE/USDT",
+    "ETH/USDT",
+    "SOL/USDT",
+    "TRON/USDT",
+    "USDC/USDT",
+    "USDT/USDT",
+    "XRP/USDT",
+    "ZEC/USDT"
+  ]
 }
