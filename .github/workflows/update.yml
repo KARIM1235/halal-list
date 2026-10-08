@@ -1,8 +1,8 @@
 name: update halal
 on:
-  schedule:
-    - cron: "0 6 * * *"
   workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * *'
 permissions:
   contents: write
 jobs:
@@ -13,11 +13,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install cloudscraper requests
+      - run: pip install cloudscraper requests lxml
       - run: python scraper.py
       - run: |
-          git config user.name "bot"
-          git config user.email "bot@bot.com"
+          git config user.name "halal-bot"
+          git config user.email "bot@example.com"
           git add halal_pairs.json
-          git commit -m "update" || exit 0
+          git commit -m "live update $(date -u)" || exit 0
           git push
