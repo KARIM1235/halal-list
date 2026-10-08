@@ -1,50 +1,38 @@
-import json, time, re
-try:
-    import cloudscraper
-    scraper = cloudscraper.create_scraper()
-except:
-    import requests
-    scraper = requests
+import json, time, re, sys
+import cloudscraper
+scraper = cloudscraper.create_scraper(browser={'browser':'chrome','platform':'windows','mobile':False})
 
-def live_pif():
-    try:
-        html = scraper.get("https://pif.finance/crypto-halal-reports", timeout=30).text
-        coins=set(re.findall(r'"symbol"\s*:\s*"([A-Z0-9]+)".{0,80}?"comfort"\s*:\s*"Comfortable"', html))
-        if not coins:
-            coins=set(re.findall(r'([A-Z]{2,6})\s*-\s*Comfortable', html))
-        print(f"PIF LIVE: {coins}")
-        return coins
-    except Exception as e:
-        print(f"PIF err {e}")
-        return set()
+def get_pif():
+    for url in ["https://pif.finance/crypto-halal-reports","https://pif.finance/api/crypto-reports"]:
+        try:
+            txt = scraper.get(url, timeout=30).text
+            print(f"PIF {url} len {len(txt)}")
+            coins = set(re.findall(r'"symbol"\s*:\s*"([A-Z0-9]+)".{0,120}?"comfort"\s*:\s*"Comfortable"', txt))
+            if coins:
+                return coins
+        except Exception as e:
+            print(e)
+    return set()
 
-def live_cryptohalal():
-    try:
-        html = scraper.get("https://cryptohalal.cc/ar", timeout=30).text
-        coins=set(re.findall(r'<td[^>]*>\s*([A-Z0-9]{2,10})\s*</td>\s*<td[^>]*>\s*مباح', html))
-        if not coins:
-            html = scraper.get("https://cryptohalal.cc/", timeout=30).text
-            coins=set(re.findall(r'<td[^>]*>\s*([A-Z0-9]{2,10})\s*</td>\s*<td[^>]*>\s*Halal', html, re.I))
-        print(f"CH LIVE: {coins}")
-        return coins
-    except Exception as e:
-        print(f"CH err {e}")
-        return set()
+def get_ch():
+    for url in ["https://cryptohalal.cc/ar","https://cryptohalal.cc/"]:
+        try:
+            txt = scraper.get(url, timeout=30).text
+            print(f"CH {url} len {len(txt)}")
+            coins = set(re.findall(r'<td[^>]*>\s*([A-Z0-9]{2,10})\s*</td>\s*<td[^>]*>\s*(مباح|Halal)', txt, re.I))
+            if coins:
+                return coins
+        except Exception as e:
+            print(e)
+    return set()
 
-pif=live_pif()
-ch=live_cryptohalal()
-merged=sorted(list(pif.union(ch)))
-print(f"TOTAL LIVE {len(merged)}: {merged}")
+pif=get_pif()
+ch=get_ch()
+merged=sorted(pif.union(ch))
+print(f"RESULT PIF={len(pif)} CH={len(ch)} TOTAL={len(merged)}")
 if len(merged)==0:
-    raise Exception("Live empty - still blocked")
+    print("LIVE BLOCKED - see logs above")
+    sys.exit(1)
 
-out={
- "updated": time.strftime("%Y-%m-%d %H:%M LIVE UTC"),
- "sources": ["LIVE PIF Comfortable","LIVE cryptohalal مباح"],
- "counts": {"pif":len(pif),"cryptohalal":len(ch)},
- "count": len(merged),
- "coins": merged,
- "pairs": [f"{c}/USDT" for c in merged]
-}
 with open("halal_pairs.json","w",encoding="utf-8") as f:
-    json.dump(out,f,indent=2,ensure_ascii=False)
+    json.dump({"updated":time.strftime("%Y-%m-%d %H:%M LIVE"),"live":True,"counts":{"pif":len(pif),"ch":len(ch)},"sources":["https://pif.finance Comfortable","https://cryptohalal.cc مباح"],"count":len(merged),"coins":merged,"pairs":[f"{c}/USDT" for c in merged]},f,indent=2,ensure_ascii=False)
