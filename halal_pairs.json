@@ -1,10 +1,9 @@
 {
-  "updated": "2026-10-09 03:29 UTC PURE API",
+  "updated": "2026-10-09 03:34 UTC BYPASS",
   "live": true,
-  "source": "PURE - Bybit Official API + CryptoHalal API - 0 hardcoded",
+  "source": "Bybit via proxy + CryptoHalal limit=50 - pure API",
   "bybit_count": 0,
-  "cryptohalal_total": 0,
-  "cryptohalal_halal": 0,
+  "halal_count": 0,
   "count": 0,
   "coins": [],
   "pairs": []
