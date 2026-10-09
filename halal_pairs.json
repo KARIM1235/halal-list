@@ -1,12 +1,32 @@
 {
-  "updated": "2026-10-09 01:36 LIVE UTC",
+  "updated": "2026-10-09 01:41 LIVE UTC",
   "live": true,
-  "source": "LIVE playwright cryptohalal.cc - 1 halal",
-  "count": 1,
+  "source": "LIVE playwright cryptohalal.cc - 11 halal",
+  "count": 11,
   "coins": [
-    "40"
+    "BNB",
+    "BTC",
+    "DOGE",
+    "ETH",
+    "SOL",
+    "TRON",
+    "TRX",
+    "USDC",
+    "USDT",
+    "XRP",
+    "ZEC"
   ],
   "pairs": [
-    "40/USDT"
+    "BNB/USDT",
+    "BTC/USDT",
+    "DOGE/USDT",
+    "ETH/USDT",
+    "SOL/USDT",
+    "TRON/USDT",
+    "TRX/USDT",
+    "USDC/USDT",
+    "USDT/USDT",
+    "XRP/USDT",
+    "ZEC/USDT"
   ]
 }
