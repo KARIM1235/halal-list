@@ -2,22 +2,23 @@ name: update halal auto bybit
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 * * * *' # كل ساعة
+        - cron: '0 * * * *'
 permissions:
   contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install requests beautifulsoup4
-      - run: python scraper.py
-      - run: |
+            - run: pip install playwright
+            - run: playwright install chromium --with-deps
+            - run: python scraper.py
+            - run: |
           git config user.name "bybit-halal-bot"
-          git config user.email "bot@bybit-islamic.com"
+          git config user.email "bot@bybit.com"
           git add halal_pairs.json
           git commit -m "auto update bybit islamic $(date -u)" || exit 0
           git push
