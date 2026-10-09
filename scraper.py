@@ -1,71 +1,82 @@
-import json, requests, time
+import json, time, re
+from playwright.sync_api import sync_playwright
 
-headers = {
-    "User-Agent": "Mozilla/5.0",
-    "Referer": "https://cryptohalal.cc/ar"
-}
+all_coins = {}
 
-# نجيبو كلشي مرة وحدة limit=100
-url = "https://api.cryptohalal.cc/api/coins?limit=100&page=1"
-r = requests.get(url, headers=headers, timeout=30)
-print(f"Status {r.status_code}")
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    page = browser.new_page(user_agent="Mozilla/5.0 Chrome/122.0")
 
-data = r.json()
-# الـ API كيرجع شكلين مختلفين
-if isinstance(data, dict):
-    if "data" in data and isinstance(data["data"], dict):
-        items = data["data"].get("items", []) or data["data"].get("data", [])
-    elif "data" in data and isinstance(data["data"], list):
-        items = data["data"]
-    else:
-        items = data.get("items", []) or data.get("coins", [])
-else:
-    items = data
+    def handle_response(resp):
+        url = resp.url
+        # أي API فيه coins
+        if "coin" in url.lower() and "api" in url.lower():
+            try:
+                data = resp.json()
+                # نحاولو نستخرجو الـ items
+                items = []
+                if isinstance(data, dict):
+                    if isinstance(data.get("data"), list):
+                        items = data["data"]
+                    elif isinstance(data.get("data"), dict):
+                        items = data["data"].get("items") or data["data"].get("data") or []
+                    else:
+                        items = data.get("items") or []
+                elif isinstance(data, list):
+                    items = data
 
-print(f"TOTAL items from API: {len(items)}")
+                for c in items:
+                    if isinstance(c, dict):
+                        sym = (c.get("symbol") or "").upper()
+                        if sym:
+                            all_coins[sym] = c
+                            # print للـ debug
+                            j = c.get("judgement", c.get("judgment", c.get("status")))
+                            print(f"Captured {sym} j={j} from {url[:70]}")
 
+            except Exception as e:
+                pass
+
+    page.on("response", handle_response)
+
+    print("Loading https://cryptohalal.cc/ar")
+    page.goto("https://cryptohalal.cc/ar", wait_until="networkidle", timeout=60000)
+    time.sleep(5)
+
+    # نـscrollيو باش نجيبو كل 131 عملة
+    # الموقع كيدير infinite scroll كيعمر 10 بـ 10
+    for i in range(15): # 15 مرة scroll = 150 عملة
+        page.mouse.wheel(0, 3000)
+        time.sleep(2)
+        print(f"Scroll {i+1}/15 -> collected {len(all_coins)} coins")
+
+    browser.close()
+
+# دابا نفلترو غير مباح
 mubah = []
-for c in items:
-    # حماية من Error 'str' object has no attribute 'get'
-    if not isinstance(c, dict):
-        continue
-    
-    sym = (c.get("symbol") or c.get("coin_symbol") or "").upper().strip()
-    
-    # هنا فين كان المشكل - خاص نقلبو على كل الحقول المحتملة
-    judgement = c.get("judgement")
-    if judgement is None:
-        judgement = c.get("judgment")  # بلا e
-    if judgement is None:
-        judgement = c.get("status")
-    if judgement is None:
-        judgement = c.get("halal_status")
-    if judgement is None:
-        judgement = c.get("hukm")
+for sym, c in all_coins.items():
+    j = c.get("judgement")
+    if j is None: j = c.get("judgment")
+    if j is None: j = c.get("status")
+    if j is None: j = c.get("hukm")
 
-    # الحكم 0 = مباح، 1 = مشبوه، 2 = محظور
     is_mubah = False
-    if isinstance(judgement, int) and judgement == 0:
-        is_mubah = True
-    if isinstance(judgement, str):
-        if "مباح" in judgement or judgement == "0" or judgement.lower() in ["halal","mubah"]:
-            is_mubah = True
-    # بعض النسخ كتستعمل is_halal = True
-    if c.get("is_halal") == True:
-        is_mubah = True
+    if isinstance(j, int) and j == 0: is_mubah = True
+    if isinstance(j, str) and ("مباح" in j or j=="0" or j.lower()=="halal"): is_mubah = True
+    if c.get("is_halal") == True: is_mubah = True
 
-    if is_mubah and sym:
+    if is_mubah:
         mubah.append(sym)
-        print(f"+ MUBAH {sym} j={judgement}")
 
 mubah = sorted(list(set(mubah)))
-print(f"\nFINAL {len(mubah)} مباح LIVE from API: {mubah}")
+print(f"\nFINAL {len(mubah)} مباح LIVE from NEW API: {mubah}")
+print(f"TOTAL collected {len(all_coins)} coins")
 
 with open("halal_pairs.json","w",encoding="utf-8") as f:
     json.dump({
-        "updated": time.strftime("%Y-%m-%d %H:%M LIVE"),
+        "updated": time.strftime("%Y-%m-%d %H:%M LIVE NEW"),
         "live": True,
-        "source": f"LIVE api.cryptohalal.cc - {len(mubah)} halal",
+        "source": f"LIVE NEW cryptohalal.cc scroll - {len(all_coins)} total, {len(mubah)} halal",
         "count": len(mubah),
         "coins": mubah,
         "pairs": [f"{c}/USDT" for c in mubah]
