@@ -1,7 +1,7 @@
 {
-  "updated": "2026-10-09 01:07 LIVE UTC",
+  "updated": "2026-10-09 01:14 LIVE UTC",
   "live": true,
-  "source": "api.cryptohalal.cc judgement==0 - 34 halal / 51 total",
+  "source": "api.cryptohalal.cc all pages - 34 halal from 51 total",
   "count": 34,
   "coins": [
     "ADA",
@@ -74,6 +74,5 @@
     "XRP/USDT",
     "ZEC/USDT",
     "ZRO/USDT"
-  ],
-  "haram_count": 17
+  ]
 }
