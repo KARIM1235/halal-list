@@ -1,23 +1,8 @@
 {
-  "count": 8,
-  "coins": [
-    "BTC",
-    "DOGE",
-    "ETH",
-    "SOL",
-    "TRON",
-    "USDC",
-    "XRP",
-    "ZEC"
-  ],
-  "pairs": [
-    "BTC/USDT",
-    "DOGE/USDT",
-    "ETH/USDT",
-    "SOL/USDT",
-    "TRON/USDT",
-    "USDC/USDT",
-    "XRP/USDT",
-    "ZEC/USDT"
-  ]
+  "updated": "2026-10-09 02:52 LIVE",
+  "live": true,
+  "source": "LIVE api.cryptohalal.cc - 0 total, 0 halal",
+  "count": 0,
+  "coins": [],
+  "pairs": []
 }
