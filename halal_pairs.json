@@ -1,7 +1,9 @@
 {
-  "updated": "2026-10-09 03:19 UTC LIVE BYBIT AUTO",
+  "updated": "2026-10-09 03:23 UTC BYBIT API",
   "live": true,
-  "source": "AUTO Playwright Bybit Islamic - no hardcoded coins",
+  "source": "Bybit Official API v5 + CryptoHalal API - auto no hardcode",
+  "bybit_total_usdt": 0,
+  "cryptohalal_total": 0,
   "count": 0,
   "coins": [],
   "pairs": []
