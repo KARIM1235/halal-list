@@ -3,22 +3,13 @@ from playwright.sync_api import sync_playwright
 
 def extract_symbol(row):
     try:
-        # كنحاولو نجيبو السيمبول من العمود الثاني
         tds = row.locator("td").all()
         if len(tds) >= 2:
-            txt = tds[1].inner_text() # العمود فيه الاسم + الرمز
-            # فيه مثلا "Bitcoin\nBTC" أو "BTC"
-            parts = re.findall(r'\b[A-Z]{2,10}\b', txt)
-            for p in parts:
-                if p not in ["USDT","USDC","BUSD","AR"] and len(p)>=2:
-                    return p
-        # fallback من النص الكامل
-        full = row.inner_text()
-        parts = re.findall(r'\b[A-Z]{2,10}\b', full)
-        for p in parts:
-            if p not in ["USDT","USDC","BUSD"] and p.isalpha() and len(p)>=2:
-                # نتفاداو كلمات مثل BTC موجودة
-                return p
+            txt = tds[1].inner_text()
+            m = re.findall(r'\b[A-Z]{2,10}\b', txt)
+            for s in m:
+                if s not in ["USDT","USDC","AR","USD"] and s.isalpha():
+                    return s
     except:
         pass
     return None
@@ -26,56 +17,66 @@ def extract_symbol(row):
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, args=["--no-sandbox"])
     page = browser.new_page(user_agent="Mozilla/5.0 Chrome/122.0")
+    page.goto("https://cryptohalal.cc/ar", timeout=90000, wait_until="domcontentloaded")
+    page.wait_for_timeout(8000)
 
     all_mubah = set()
+    seen_pages = set()
 
-    # كنقلبو من page 1 حتى 100
     for page_num in range(1, 101):
-        url = f"https://cryptohalal.cc/ar?page={page_num}" if page_num>1 else "https://cryptohalal.cc/ar"
-        print(f"--- Page {page_num} {url} ---")
-        page.goto(url, timeout=90000, wait_until="domcontentloaded")
-        page.wait_for_timeout(6000)
-
+        print(f"--- Page {page_num} scanning ---")
         rows = page.locator("table tr").all()
-        print(f"Rows found: {len(rows)}")
+        print(f"Rows: {len(rows)}")
 
-        if len(rows) <= 1:
-            print("No more rows, stopping")
-            break
-
-        new_in_page = 0
+        new = 0
         for row in rows:
             try:
                 txt = row.inner_text()
                 if "مباح" in txt and "غير مباح" not in txt:
                     sym = extract_symbol(row)
-                    if sym and sym not in all_mubah:
-                        # فلترة نهائية
-                        if sym not in ["USDT","USDC","EUR","USD"] and sym.isalpha():
+                    if sym and sym not in all_mubah and sym.isalpha():
+                        if sym not in ["EUR"]:
                             all_mubah.add(sym)
-                            new_in_page += 1
+                            new += 1
                             print(f" + {sym}")
             except:
                 continue
 
-        print(f"Page {page_num}: +{new_in_page} new, total {len(all_mubah)}")
+        print(f"Page {page_num}: +{new} total {len(all_mubah)}")
 
-        # إلا 3 صفحات متتالية ما جابوش جديد، حبس
-        if page_num > 5 and new_in_page==0:
-            # شوف الصفحة اللي بعدها واش فيها جديد
-            # نحاولو نكملو شوية
-            if page_num > 10:
-                # بعد 10 إلا ما كاين والو حبس
-                consecutive_empty = 0
-                # هنا نبسطو
-                pass
+        # قلب للصفحة الجاية بالكليك
+        # كنقلبو على زر 2,3,4... أو التالي
+        next_clicked = False
 
-        # إلا الصفحة فيها أقل من 5 أسطر، غالبا الأخيرة
-        if len(rows) < 5:
+        # طريقة 1: كليك على رقم الصفحة الجاية
+        try:
+            next_num = page_num + 1
+            # كاين أزرار pagination تحت الجدول
+            btn = page.locator(f"ul.pagination li a:has-text('{next_num}'), a.page-link:has-text('{next_num}')").first
+            if btn.count() > 0 and btn.is_visible():
+                print(f"Clicking page {next_num} button")
+                btn.click()
+                page.wait_for_timeout(6000)
+                next_clicked = True
+            else:
+                # طريقة 2: زر التالي >
+                btn_next = page.locator("ul.pagination li.next a, li:has-text('›') a, a:has-text('التالي'), button:has-text('التالي')").first
+                if btn_next.count() > 0 and btn_next.is_visible():
+                    # واش disabled؟
+                    parent = btn_next.locator("..")
+                    if "disabled" not in parent.inner_html().lower():
+                        print("Clicking NEXT > button")
+                        btn_next.click()
+                        page.wait_for_timeout(6000)
+                        next_clicked = True
+        except Exception as e:
+            print(f"Click err {e}")
+
+        if not next_clicked:
+            print("No next button - finished all pages")
             break
 
-        # حماية
-        if len(all_mubah) > 200:
+        if len(all_mubah) > 300:
             break
 
     browser.close()
@@ -87,7 +88,7 @@ with sync_playwright() as p:
         json.dump({
             "updated": time.strftime("%Y-%m-%d %H:%M LIVE UTC"),
             "live": True,
-            "source": f"LIVE https://cryptohalal.cc/ar ALL {len(merged)} مباح - scanned 100 pages",
+            "source": f"LIVE https://cryptohalal.cc/ar ALL {len(merged)} مباح via pagination clicks",
             "count": len(merged),
             "coins": merged,
             "pairs": [f"{c}/USDT" for c in merged]
