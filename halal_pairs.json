@@ -1,5 +1,23 @@
 {
-  "count": 0,
-  "coins": [],
-  "pairs": []
+  "count": 8,
+  "coins": [
+    "BTC",
+    "DOGE",
+    "ETH",
+    "SOL",
+    "TRON",
+    "USDC",
+    "XRP",
+    "ZEC"
+  ],
+  "pairs": [
+    "BTC/USDT",
+    "DOGE/USDT",
+    "ETH/USDT",
+    "SOL/USDT",
+    "TRON/USDT",
+    "USDC/USDT",
+    "XRP/USDT",
+    "ZEC/USDT"
+  ]
 }
