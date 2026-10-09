@@ -20,5 +20,5 @@ jobs:
           git config user.name "halal-bot"
           git config user.email "bot@example.com"
           git add halal_pairs.json
-          git commit -m "live new api $(date -u)" || exit 0
+          git commit -m "visual ai 51 $(date -u)" || exit 0
           git push
