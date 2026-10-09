@@ -1,12 +1,8 @@
 {
-  "updated": "2026-10-09 03:10 UTC LIVE BYBIT AUTO",
+  "updated": "2026-10-09 03:19 UTC LIVE BYBIT AUTO",
   "live": true,
-  "source": "AUTO scraped from Bybit Islamic official announcements - no hardcoded coins",
-  "count": 1,
-  "coins": [
-    "BTC"
-  ],
-  "pairs": [
-    "BTC/USDT"
-  ]
+  "source": "AUTO Playwright Bybit Islamic - no hardcoded coins",
+  "count": 0,
+  "coins": [],
+  "pairs": []
 }
