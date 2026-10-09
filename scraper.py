@@ -1,82 +1,97 @@
 import json, time, re
 from playwright.sync_api import sync_playwright
 
-all_coins = {}
+mubah_set = set()
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
     page = browser.new_page(user_agent="Mozilla/5.0 Chrome/122.0")
-
-    def handle_response(resp):
-        url = resp.url
-        # أي API فيه coins
-        if "coin" in url.lower() and "api" in url.lower():
-            try:
-                data = resp.json()
-                # نحاولو نستخرجو الـ items
-                items = []
-                if isinstance(data, dict):
-                    if isinstance(data.get("data"), list):
-                        items = data["data"]
-                    elif isinstance(data.get("data"), dict):
-                        items = data["data"].get("items") or data["data"].get("data") or []
-                    else:
-                        items = data.get("items") or []
-                elif isinstance(data, list):
-                    items = data
-
-                for c in items:
-                    if isinstance(c, dict):
-                        sym = (c.get("symbol") or "").upper()
-                        if sym:
-                            all_coins[sym] = c
-                            # print للـ debug
-                            j = c.get("judgement", c.get("judgment", c.get("status")))
-                            print(f"Captured {sym} j={j} from {url[:70]}")
-
-            except Exception as e:
-                pass
-
-    page.on("response", handle_response)
-
-    print("Loading https://cryptohalal.cc/ar")
+    
+    print("Opening cryptohalal.cc/ar ...")
     page.goto("https://cryptohalal.cc/ar", wait_until="networkidle", timeout=60000)
-    time.sleep(5)
+    time.sleep(6)
 
-    # نـscrollيو باش نجيبو كل 131 عملة
-    # الموقع كيدير infinite scroll كيعمر 10 بـ 10
-    for i in range(15): # 15 مرة scroll = 150 عملة
-        page.mouse.wheel(0, 3000)
-        time.sleep(2)
-        print(f"Scroll {i+1}/15 -> collected {len(all_coins)} coins")
+    # الموقع كيدير تحميل 10 بـ 10 خاص نكليكيو على زر تحميل المزيد
+    for scroll in range(30):
+        # قلب على زر تحميل المزيد ولا عرض المزيد
+        try:
+            load_btn = page.locator("text=تحميل المزيد, text=عرض المزيد, text=Load more, button:has-text(المزيد)").first
+            if load_btn.is_visible(timeout=1000):
+                print(f"Clicking Load More {scroll+1}")
+                load_btn.click()
+                time.sleep(3)
+            else:
+                # إلا ما كاينش زر، سكرولي
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                time.sleep(2)
+                print(f"Scroll {scroll+1} -> height {page.evaluate('document.body.scrollHeight')}")
+        except:
+            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            time.sleep(2)
+
+        # دابا الذكاء الاصطناعي: قلب على كل العناصر اللي فيها مباح
+        coins_found = page.evaluate("""
+        () => {
+            const results = [];
+            // كل العناصر اللي فيها كلمة مباح
+            const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT);
+            let node;
+            while(node = walker.nextNode()){
+                const text = (node.innerText || '').trim();
+                if(text.includes('مباح') && text.length < 500){
+                    // شد الكارت الكبير اللي فيه العملة
+                    let card = node;
+                    // طلع 4 مستويات لفوق باش تلقى الكارت
+                    for(let i=0; i<5; i++){
+                        if(!card.parentElement) break;
+                        card = card.parentElement;
+                        const cardText = card.innerText || '';
+                        if(cardText.length > 10 && cardText.length < 400){
+                            // قلب على رمز العملة (2-6 حروف كبيرة)
+                            const match = cardText.match(/\\b([A-Z]{2,6})\\b/g);
+                            if(match){
+                                results.push({cardText: cardText.substring(0,200), symbols: match});
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            return results;
+        }
+        """)
+
+        for item in coins_found:
+            txt = item['cardText']
+            syms = item['symbols']
+            for s in syms:
+                s = s.upper()
+                if s in ["PAGE","HTML","DIV","AR","EN","USDT","USD","MORE","LOAD","COIN","HALAL","HARAM"]:
+                    continue
+                if 2 <= len(s) <= 6 and s.isalpha() and s.isupper():
+                    if s not in mubah_set:
+                        print(f"+ MUBAH {s} | {txt[:80]}")
+                    mubah_set.add(s)
+
+        # إلا جمعنا أكثر من 45 حبسنا
+        if len(mubah_set) >= 45:
+            print(f"Got {len(mubah_set)} enough, stopping")
+            break
 
     browser.close()
 
-# دابا نفلترو غير مباح
-mubah = []
-for sym, c in all_coins.items():
-    j = c.get("judgement")
-    if j is None: j = c.get("judgment")
-    if j is None: j = c.get("status")
-    if j is None: j = c.get("hukm")
+mubah = sorted(list(mubah_set))
+# فلتر أخير نحيدو الأرقام والكلمات العامة
+mubah = [x for x in mubah if x not in ["AR","EN","USDT"] and len(x)>=2]
 
-    is_mubah = False
-    if isinstance(j, int) and j == 0: is_mubah = True
-    if isinstance(j, str) and ("مباح" in j or j=="0" or j.lower()=="halal"): is_mubah = True
-    if c.get("is_halal") == True: is_mubah = True
-
-    if is_mubah:
-        mubah.append(sym)
-
-mubah = sorted(list(set(mubah)))
-print(f"\nFINAL {len(mubah)} مباح LIVE from NEW API: {mubah}")
-print(f"TOTAL collected {len(all_coins)} coins")
+print(f"\nTOTAL scanned visually")
+print(f"FINAL {len(mubah)} مباح LIVE from site visual AI: {mubah}")
 
 with open("halal_pairs.json","w",encoding="utf-8") as f:
     json.dump({
-        "updated": time.strftime("%Y-%m-%d %H:%M LIVE NEW"),
+        "updated": time.strftime("%Y-%m-%d %H:%M LIVE VISUAL"),
         "live": True,
-        "source": f"LIVE NEW cryptohalal.cc scroll - {len(all_coins)} total, {len(mubah)} halal",
+        "source": f"LIVE visual AI cryptohalal.cc - {len(mubah)} halal",
         "count": len(mubah),
         "coins": mubah,
         "pairs": [f"{c}/USDT" for c in mubah]
