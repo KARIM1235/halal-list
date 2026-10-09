@@ -1,33 +1,26 @@
 {
-  "updated": "2026-10-09 00:15 LIVE UTC",
+  "updated": "2026-10-09 00:24 LIVE UTC",
   "live": true,
-  "sources": [
-    "PIF",
-    "CH"
-  ],
-  "counts": {
-    "pif": 0,
-    "ch": 8
-  },
+  "source": "LIVE https://cryptohalal.cc/ar - ALL pages مباح",
   "count": 8,
   "coins": [
+    "10",
+    "11",
     "BNB",
     "BTC",
-    "DOGE",
     "ETH",
     "SOL",
     "TRON",
-    "XRP",
-    "ZEC"
+    "XRP"
   ],
   "pairs": [
+    "10/USDT",
+    "11/USDT",
     "BNB/USDT",
     "BTC/USDT",
-    "DOGE/USDT",
     "ETH/USDT",
     "SOL/USDT",
     "TRON/USDT",
-    "XRP/USDT",
-    "ZEC/USDT"
+    "XRP/USDT"
   ]
 }
