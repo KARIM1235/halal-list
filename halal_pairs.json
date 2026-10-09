@@ -1,8 +1,12 @@
 {
-  "updated": "2026-10-09 02:52 LIVE",
+  "updated": "2026-10-09 03:10 UTC LIVE BYBIT AUTO",
   "live": true,
-  "source": "LIVE api.cryptohalal.cc - 0 total, 0 halal",
-  "count": 0,
-  "coins": [],
-  "pairs": []
+  "source": "AUTO scraped from Bybit Islamic official announcements - no hardcoded coins",
+  "count": 1,
+  "coins": [
+    "BTC"
+  ],
+  "pairs": [
+    "BTC/USDT"
+  ]
 }
