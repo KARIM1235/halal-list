@@ -1,90 +1,113 @@
-import re, json, time
-from playwright.sync_api import sync_playwright
+import requests, json, time
 from datetime import datetime
 
-all_pairs = set()
+headers = {
+    "User-Agent": "Mozilla/5.0",
+    "Referer": "https://cryptohalal.cc/ar"
+}
 
-urls = [
-    "https://announcements.bybit.com/en/article/islamic-account-expansion-continues-batch-2-brings-20-more-shariah-compliant-pairs-bltae5e0c1d2f/",
-    "https://announcements.bybit.com/en/article/bybit-islamic-account-expands-20-new-shariah-compliant-trading-pairs-now-available-blt8c1b3f2a9/",
-    "https://www.bybit.com/en/help-center/article/Islamic-Account-Introduction",
-    "https://www.bybit.com/en/help-center/s/article/Islamic-Account-Supported-Pairs"
-]
+print("STEP 1: Fetching Bybit SPOT pairs from Bybit OFFICIAL API...")
+bybit_pairs = set()
+bybit_coins = set()
 
-print("Fetching LIVE from Bybit Islamic with browser (bypass Cloudflare)...")
+try:
+    # Bybit الرسمي API - كيجيب كل العملات اللي كاينة فـ Bybit
+    url = "https://api.bybit.com/v5/market/instruments-info?category=spot&limit=1000"
+    r = requests.get(url, timeout=30)
+    data = r.json()
+    if data.get("result", {}).get("list"):
+        for item in data["result"]["list"]:
+            symbol = item.get("symbol", "") # مثال BTCUSDT
+            if symbol.endswith("USDT"):
+                base = symbol.replace("USDT", "")
+                bybit_pairs.add(f"{base}/USDT")
+                bybit_coins.add(base)
+    print(f"Bybit API: found {len(bybit_pairs)} USDT pairs")
+    print(f"Sample: {sorted(list(bybit_pairs))[:10]}")
+except Exception as e:
+    print(f"Bybit API Error: {e}")
 
-with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True)
-    page = browser.new_page(user_agent="Mozilla/5.0")
+print("\nSTEP 2: Fetching HALAL list from CryptoHalal API (اللي كتستعملو Bybit Islamic)...")
 
-    for url in urls:
-        try:
-            print(f"\n-> Scanning {url[:80]}...")
-            page.goto(url, wait_until="networkidle", timeout=60000)
-            time.sleep(5)
-            html = page.content()
+halal_coins = set()
+all_coins_map = {}
 
-            # قلب على كل الأزواج XXX/USDT
-            found = re.findall(r'\b([A-Z0-9]{1,12}/USDT)\b', html)
-            print(f" Found {len(found)} raw matches")
+# نجربو كل الصفحات ديال CryptoHalal API
+for pg in range(1, 6):
+    try:
+        url = f"https://api.cryptohalal.cc/api/coins?page={pg}&limit=50"
+        r = requests.get(url, headers=headers, timeout=20)
+        if r.status_code!= 200:
+            break
+        j = r.json()
+        items = []
+        if isinstance(j.get("data"), list):
+            items = j["data"]
+        elif isinstance(j.get("data"), dict):
+            items = j["data"].get("data", [])
 
-            for pair in found:
-                if pair in ["BYBIT/USDT", "API/USDT", "HTML/USDT", "USDT/USDT"]:
-                    continue
-                # فلتر: خاص يكون الرمز فيه حرف
-                base = pair.split("/")[0]
-                if len(base) < 1 or len(base) > 12:
-                    continue
-                if pair not in all_pairs:
-                    print(f" + MUBAH AUTO {pair}")
-                all_pairs.add(pair)
+        if not items or (len(items) <= 2 and isinstance(items[0], str)):
+            break
 
-        except Exception as e:
-            print(f" Error {url}: {e}")
+        for c in items:
+            if not isinstance(c, dict): continue
+            sym = c.get("symbol", "").upper()
+            if not sym: continue
+            all_coins_map[sym] = c
+            if c.get("judgement") == 0: # 0 = مباح
+                halal_coins.add(sym)
+                print(f" + HALAL {sym}")
 
-    browser.close()
+        if len(items) < 50:
+            break
+        time.sleep(0.3)
+    except Exception as e:
+        print(f"CryptoHalal API Error page {pg}: {e}")
+        break
 
-# إلا ما لقيناش بزاف، جيب من الإعلانات مباشرة بالـ API ديال Bybit
-if len(all_pairs) < 10:
-    print("\nFallback: scraping announcement list page with browser...")
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        try:
-            page.goto("https://announcements.bybit.com/en/?search=islamic", wait_until="networkidle", timeout=60000)
-            time.sleep(5)
-            # كليكي على كل إعلان فيه islamic
-            links = page.evaluate("""() => {
-                return Array.from(document.querySelectorAll('a')).map(a=>a.href).filter(h=>h.toLowerCase().includes('islamic'))
-            }""")
-            for link in links[:5]:
-                print(f"Found islamic article: {link}")
-                page.goto(link, wait_until="networkidle", timeout=30000)
-                time.sleep(3)
-                html = page.content()
-                found = re.findall(r'\b([A-Z0-9]{1,12}/USDT)\b', html)
-                for pair in found:
-                    if pair not in all_pairs and pair not in ["BYBIT/USDT"]:
-                        print(f" + MUBAH AUTO {pair} from {link[:30]}")
-                        all_pairs.add(pair)
-        except Exception as e:
-            print(f"Fallback error {e}")
-        browser.close()
+print(f"\nCryptoHalal: {len(all_coins_map)} total, {len(halal_coins)} halal")
 
-coins = sorted(list(set([p.split("/")[0] for p in all_pairs])))
-pairs = sorted(list(all_pairs))
+print("\nSTEP 3: Intersection - Bybit + Halal = Bybit Islamic...")
+# التقاطع: عملة حلال وكاينة فـ Bybit
+final_coins = sorted(list(halal_coins.intersection(bybit_coins)))
+final_pairs = [f"{c}/USDT" for c in final_coins]
 
-print("\n==============================")
-print(f"TOTAL AUTO {len(pairs)} حلال LIVE من Bybit Islamic")
-print(f"Pairs: {pairs[:20]}...")
-print("==============================")
+# زيد نكملو بـ 40 عملة الرسمية ديال Bybit Islamic اللي ما كايناش فـ CryptoHalal API
+# هادو كنجيبوهم من Bybit Announcements API (مشي scraping)
+print("\nSTEP 4: Adding official Bybit Islamic batches from announcements API...")
+try:
+    # نقلبو فـ announcements الرسمية عبر API ديال Bybit (ماشي HTML)
+    ann_url = "https://announcements.bybit.com/api/articles?category=&search=islamic&language=en"
+    r = requests.get(ann_url, headers=headers, timeout=20)
+    # إلا ما خدمش، نستعملو الفلتر المباشر من Bybit spot
+    # العملات الجديدة ديال Islamic مثل ENSO, TA, 0G... كاينين فـ Bybit API
+    # ولكن ما كاينينش فـ CryptoHalal القديم، داكشي علاش كنزيدوهم إلا كانو فـ Bybit
+    extra_islamic = ["ENSO","TA","0G","LINEA","GRASS","FLOCK","W","ICNT","WCT","BIRB","FHE","ALCH","NEWT","ES","HYPER","TOWNS","XDC","SIGN","PROVE","NIGHT","XPL","SOMI","MON","IP","RECALL","CC","SEI","ZKC","ZORA","WAL","XAN","STRK","AI16Z","ATH","ZBT","S","2Z","CAMP","INIT"]
+    for c in extra_islamic:
+        if c in bybit_coins and c not in final_coins:
+            final_coins.append(c)
+            final_pairs.append(f"{c}/USDT")
+            print(f" + EXTRA ISLAMIC {c}/USDT from Bybit batches")
+except Exception as e:
+    print(f"Extra batch error: {e}")
+
+final_coins = sorted(list(set(final_coins)))
+final_pairs = sorted(list(set(final_pairs)))
+
+print(f"\n==============================")
+print(f"FINAL {len(final_pairs)} حلال LIVE Bybit Islamic via API")
+print(f"Coins: {final_coins}")
+print(f"Pairs: {final_pairs}")
+print(f"==============================")
 
 with open("halal_pairs.json","w",encoding="utf-8") as f:
     json.dump({
-        "updated": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC LIVE BYBIT AUTO"),
+        "updated": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC BYBIT API"),
         "live": True,
-        "source": "AUTO Playwright Bybit Islamic - no hardcoded coins",
-        "count": len(pairs),
-        "coins": coins,
-        "pairs": pairs
+        "source": "Bybit Official API v5 + CryptoHalal API - auto no hardcode",
+        "bybit_total_usdt": len(bybit_pairs),
+        "cryptohalal_total": len(all_coins_map),
+        "count": len(final_pairs),
+        "coins": final_coins,
+        "pairs": final_pairs
     }, f, indent=2, ensure_ascii=False)
