@@ -1,119 +1,93 @@
 import json, time, requests
 
-BASE_LIST = "https://api.cryptohalal.cc/api/coins"
-BASE_DETAIL = "https://api.cryptohalal.cc/api/coins"  # /{id} or /{slug}
-
 headers = {"User-Agent":"Mozilla/5.0 Chrome/122.0"}
+BASE_LIST = "https://api.cryptohalal.cc/api/coins"
 
-# 1 - جيب اللائحة كاملة (51 عملة)
-all_coins = []
-page = 1
-limit = 100
+# 1 - جيب الليستة
+r = requests.get(f"{BASE_LIST}?page=1&limit=100", headers=headers, timeout=30)
+data = r.json()
+items = data.get("data", {}).get("items", [])
+print(f"TOTAL list: {len(items)} - first: {items[0] if items else 'none'}")
 
-while True:
-    url = f"{BASE_LIST}?page={page}&limit={limit}"
-    print(f"Fetching list {url}")
-    r = requests.get(url, timeout=30, headers=headers)
-    data = r.json()
-    items = data.get("data", {}).get("items", []) or []
-    if not items:
-        break
-    all_coins.extend(items)
-    print(f"Page {page}: {len(items)}")
-    if len(items) < limit:
-        break
-    page += 1
-    if page > 10:
-        break
+mubah = []
+details_log = []
 
-print(f"TOTAL list: {len(all_coins)}")
-
-# 2 - دابا جيب التفاصيل ديال كل عملة وفلتر مباح
-mubah = set()
-
-for idx, coin in enumerate(all_coins, 1):
-    coin_id = coin.get("id")
+for coin in items[:60]: # نجربو 60 الأولى
+    cid = coin.get("id")
     slug = coin.get("slug")
-    symbol = (coin.get("symbol") or "").upper()
+    symbol = coin.get("symbol","").upper()
+    name = coin.get("name","")
 
-    if not coin_id:
-        continue
-
-    # جرب id أولا، إلا ما خدمش جرب slug
-    detail_urls = [
-        f"{BASE_DETAIL}/{coin_id}",
-        f"{BASE_DETAIL}/{slug}",
-        f"https://api.cryptohalal.cc/api/coin/{coin_id}",
+    # جرب كل الاحتمالات ديال التفاصيل
+    urls_to_try = [
+        f"https://api.cryptohalal.cc/api/coins/{cid}",
+        f"https://api.cryptohalal.cc/api/coins/{slug}",
+        f"https://api.cryptohalal.cc/api/coins/show/{cid}",
         f"https://api.cryptohalal.cc/api/coin/{slug}",
+        f"https://api.cryptohalal.cc/api/coin/{cid}",
+        f"https://cryptohalal.cc/api/coins/{cid}",
+        f"https://cryptohalal.cc/ar/coins/{slug}",
     ]
 
-    ruling_text = ""
-    found = False
+    ruling_found = ""
+    full_json_str = ""
 
-    for durl in detail_urls:
+    for u in urls_to_try:
         try:
-            dr = requests.get(durl, timeout=15, headers=headers)
-            if dr.status_code != 200:
-                continue
-            dj = dr.json()
-            # البيانات كاينة فـ data
-            ddata = dj.get("data", dj)
-
-            # جمع كل النص اللي ممكن يكون فيه الحكم
-            ruling_text = " ".join([
-                str(ddata.get("ruling","")),
-                str(ddata.get("status","")),
-                str(ddata.get("classification","")),
-                str(ddata.get("research",{}).get("ruling","")),
-                str(ddata.get("research",{})),
-                str(ddata.get("description",""))[:500],
-            ])
-
-            if ruling_text.strip():
-                found = True
-                break
-        except:
+            rr = requests.get(u, headers=headers, timeout=10)
+            if rr.status_code == 200:
+                txt = rr.text
+                full_json_str = txt[:2000]
+                # قلب على مباح فالنص كامل
+                if "مباح" in txt or "halal" in txt.lower():
+                    ruling_found = txt
+                    # سجلنا
+                    if "مباح" in txt and "غير مباح" not in txt:
+                        print(f"+ MUBAH {symbol} via {u}")
+                        mubah.append(symbol)
+                        details_log.append({"symbol":symbol, "url":u, "snippet":txt[:500]})
+                        break
+                    elif "غير مباح" in txt:
+                        print(f"- HARAM {symbol}")
+                        break
+        except Exception as e:
             continue
 
-    if not found:
-        # إلا ما لقيناش التفاصيل، نستعملو اللي فاللائحة
-        ruling_text = str(coin)
+    # إلا ما لقيناش فالـ API، جرب الصفحة العادية HTML
+    if not ruling_found:
+        try:
+            html_url = f"https://cryptohalal.cc/ar/coin/{slug}" if slug else f"https://cryptohalal.cc/coin/{slug}"
+            rh = requests.get(html_url, headers=headers, timeout=10)
+            if "مباح" in rh.text and "غير مباح" not in rh.text:
+                # تأكد أنها مباح
+                if f">{symbol}<" in rh.text or symbol in rh.text:
+                    print(f"+ MUBAH {symbol} via HTML {html_url}")
+                    mubah.append(symbol)
+        except:
+            pass
 
-    # فلترة
-    low = ruling_text.lower()
-    has_ghair = "غير مباح" in ruling_text or "غير مباح" in low or "محرم" in ruling_text or "haram" in low
+    time.sleep(0.3)
 
-    if has_ghair:
-        print(f"[{idx}/{len(all_coins)}] {symbol} = غير مباح SKIP")
-        time.sleep(0.3)
-        continue
+# إلا بقا 0، خدم بالطريقة القديمة اللي كانت خدامة (7 عملات من الصفحة الرئيسية)
+if len(mubah) == 0:
+    print("No mubah from API details, falling back to main page scrape via API")
+    # نستعملو اللي كنا كنجيبو فالأول - على الأقل 7
+    # هنا نرجعو للـ 51 ونفلترو إلا كاين حقل halal
+    for c in items:
+        # بعض النسخ فيها حقل is_halal
+        if c.get("is_halal") == True or c.get("is_halal") == 1 or c.get("halal") == True:
+            mubah.append(c.get("symbol","").upper())
 
-    if "مباح" in ruling_text:
-        mubah.add(symbol)
-        print(f"[{idx}/{len(all_coins)}] + MUBAH {symbol} - {coin.get('name')}")
-    else:
-        # بعض المرات الحكم بالإنجليزية halal
-        if "halal" in low and "haram" not in low:
-            mubah.add(symbol)
-            print(f"[{idx}/{len(all_coins)}] + MUBAH {symbol} (halal)")
-
-    time.sleep(0.4)  # باش ما نبلوكيوش
-
-# تنظيف
-if "TRON" in mubah:
-    mubah.discard("TRON")
-    mubah.add("TRX")
-
-merged = sorted(list(mubah))
-print(f"\nFINAL CH LIVE {len(merged)} مباح: {merged}")
+print(f"\nFINAL CH LIVE {len(mubah)} مباح: {mubah}")
+print(f"Details log: {details_log[:3]}")
 
 with open("halal_pairs.json","w",encoding="utf-8") as f:
     json.dump({
         "updated": time.strftime("%Y-%m-%d %H:%M LIVE UTC"),
         "live": True,
-        "source": f"LIVE api.cryptohalal.cc - {len(merged)} مباح from {len(all_coins)} total - detail check",
-        "total_scanned": len(all_coins),
-        "count": len(merged),
-        "coins": merged,
-        "pairs": [f"{c}/USDT" for c in merged]
+        "source": f"LIVE api.cryptohalal.cc detail check - {len(mubah)} from {len(items)}",
+        "count": len(mubah),
+        "coins": sorted(list(set(mubah))),
+        "pairs": [f"{c}/USDT" for c in sorted(list(set(mubah)))],
+        "debug": details_log[:5]
     }, f, indent=2, ensure_ascii=False)
