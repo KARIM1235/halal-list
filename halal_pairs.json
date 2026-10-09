@@ -1,7 +1,7 @@
 {
-  "updated": "2026-10-09 00:46 LIVE UTC",
+  "updated": "2026-10-09 00:52 LIVE UTC",
   "live": true,
-  "source": "LIVE https://api.cryptohalal.cc/api/coins - 0 مباح from 51 total",
+  "source": "LIVE api.cryptohalal.cc - 0 مباح from 51 total - detail check",
   "total_scanned": 51,
   "count": 0,
   "coins": [],
