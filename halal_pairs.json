@@ -1,15 +1,13 @@
 {
-  "updated": "2026-10-09 01:41 LIVE UTC",
+  "updated": "2026-10-09 01:50 LIVE UTC",
   "live": true,
-  "source": "LIVE playwright cryptohalal.cc - 11 halal",
-  "count": 11,
+  "source": "LIVE API intercept cryptohalal.cc - 9 halal",
+  "count": 9,
   "coins": [
-    "BNB",
     "BTC",
     "DOGE",
     "ETH",
     "SOL",
-    "TRON",
     "TRX",
     "USDC",
     "USDT",
@@ -17,12 +15,10 @@
     "ZEC"
   ],
   "pairs": [
-    "BNB/USDT",
     "BTC/USDT",
     "DOGE/USDT",
     "ETH/USDT",
     "SOL/USDT",
-    "TRON/USDT",
     "TRX/USDT",
     "USDC/USDT",
     "USDT/USDT",
