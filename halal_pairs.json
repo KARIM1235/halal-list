@@ -1,14 +1,14 @@
 {
-  "updated": "2026-10-09 00:34 LIVE UTC",
+  "updated": "2026-10-09 00:39 LIVE UTC",
   "live": true,
-  "source": "LIVE https://cryptohalal.cc/ar ALL 7 مباح via pagination clicks",
+  "source": "LIVE cryptohalal.cc - 7 مباح - scanned reports + API",
   "count": 7,
   "coins": [
     "BTC",
     "DOGE",
     "ETH",
     "SOL",
-    "TRON",
+    "TRX",
     "XRP",
     "ZEC"
   ],
@@ -17,8 +17,15 @@
     "DOGE/USDT",
     "ETH/USDT",
     "SOL/USDT",
-    "TRON/USDT",
+    "TRX/USDT",
     "XRP/USDT",
     "ZEC/USDT"
+  ],
+  "debug_apis": [
+    "https://www.cryptohalal.cc/api/market-overview",
+    "https://api.cryptohalal.cc/api/home",
+    "https://api.cryptohalal.cc/api/services",
+    "https://api.cryptohalal.cc/api/info",
+    "https://api.cryptohalal.cc/api/researches?page=1&limit=3"
   ]
 }
