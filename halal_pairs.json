@@ -1,8 +1,12 @@
 {
-  "updated": "2026-10-09 01:29 LIVE UTC",
+  "updated": "2026-10-09 01:36 LIVE UTC",
   "live": true,
-  "source": "LIVE scrape cryptohalal.cc HTML - 0 halal",
-  "count": 0,
-  "coins": [],
-  "pairs": []
+  "source": "LIVE playwright cryptohalal.cc - 1 halal",
+  "count": 1,
+  "coins": [
+    "40"
+  ],
+  "pairs": [
+    "40/USDT"
+  ]
 }
