@@ -1,100 +1,31 @@
-import json, time, re
-from playwright.sync_api import sync_playwright
+import requests, json, time
 
-mubah = set()
+headers = {"Referer":"https://cryptohalal.cc/ar","User-Agent":"Mozilla/5.0"}
+all_coins = {}
 
-with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True)
-    page = browser.new_page(user_agent="Mozilla/5.0")
+urls_to_try = [
+    "https://cryptohalal.cc/api/coins?limit=100&page={}",
+    "https://cryptohalal.cc/api/v1/coins?limit=100&page={}",
+    "https://api.cryptohalal.cc/api/coins?limit=100&page={}",
+]
 
-    print("Opening cryptohalal.cc/ar ...")
-    page.goto("https://cryptohalal.cc/ar", wait_until="networkidle", timeout=60000)
-    time.sleep(8)
+for base in urls_to_try:
+    print(f"\nTrying {base}")
+    for pg in range(1, 20):
+        url = base.format(pg)
+        r = requests.get(url, headers=headers, timeout=20)
+        if r.status_code!= 200: break
+        data = r.json()
+        items = data.get("data") if isinstance(data.get("data"), list) else data.get("data",{}).get("items",[])
+        if not items or (len(items)==2 and isinstance(items[0], str)): break
+        print(f" Page {pg} -> {len(items)} coins")
+        for c in items:
+            if isinstance(c, dict) and c.get("symbol"):
+                all_coins[c["symbol"].upper()] = c
+        if len(items) < 100: break
+    if len(all_coins) > 50:
+        break
 
-    # نعطيوه وقت يحمل
-    page.wait_for_selector("text=مباح", timeout=20000)
-
-    for pg in range(1, 60):
-        # شد كل النص اللي باين فالصفحة دابا
-        all_rows = page.evaluate("""
-        () => {
-            // جيب كل الصفوف اللي فيها عملات
-            const rows = [];
-            // الموقع كيستعمل table
-            document.querySelectorAll('table tbody tr, [role=row], div.flex').forEach(el=>{
-                const t = el.innerText || '';
-                if(t.length > 5 && t.length < 600 && (t.includes('مباح') || t.includes('غير مباح'))){
-                    rows.push(t);
-                }
-            });
-            // إلا ما لقا والو، جيب body كامل وقسمو
-            if(rows.length === 0){
-                return document.body.innerText.split('\\n').filter(l=> l.includes('مباح'));
-            }
-            return rows;
-        }
-        """)
-
-        print(f"\n--- Page {pg} found {len(all_rows)} rows ---")
-        for txt in all_rows:
-            # txt مثال: "Bitcoin BTC مباح 81,699$ ..."
-            # ولا "BNB BNB غير مباح 733$"
-            clean = txt.strip()
-            
-            # الشرط الذهبي: مباح ولكن ماشي غير مباح
-            if "مباح" in clean and "غير مباح" not in clean:
-                # قلب على الرمز: كيكون 2-5 حروف كبيرة حداها
-                # كنقلبو على أول رمز كبير
-                m = re.search(r'\b([A-Z]{2,10})\b', clean)
-                # كنقلبو على كل الرموز وناخدو آخر واحد ولا اللي قبل مباح
-                symbols = re.findall(r'\b([A-Z]{2,6})\b', clean)
-                for s in symbols:
-                    if s in ["USD","USDT","AR","EN","PAGE","COIN","MARKET"]: continue
-                    if 2 <= len(s) <= 6:
-                        if s not in mubah:
-                            print(f"+ MUBAH {s} | {clean[:70]}")
-                        mubah.add(s.upper())
-                        break
-
-        print(f"Collected so far: {len(mubah)} -> {sorted(mubah)}")
-
-        # قلب على زر التالي
-        try:
-            next_btn = page.locator("button:has-text('التالي'), a:has-text('التالي'), button:has-text('>'), button[aria-label='Next'], >> text=/^\\d+$/").first
-            # جرب نلقاو رقم الصفحة الجاية
-            next_page_num = str(pg+1)
-            btn_num = page.locator(f"text={next_page_num}").first
-            if btn_num.is_visible(timeout=1000):
-                print(f"Clicking page {next_page_num}")
-                btn_num.click()
-                time.sleep(4)
-                continue
-            
-            if next_btn.is_visible(timeout=1000):
-                print("Clicking Next...")
-                next_btn.click()
-                time.sleep(4)
-                continue
-        except Exception as e:
-            print(f"Next btn error {e}")
-
-        # إلا ما كاينش زر، حبسنا إلا ما بقاش كيزيد
-        if pg > 5 and len(mubah) >= 10:
-            # جرب نعملو scroll باش يحمل المزيد
-            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            time.sleep(3)
-
-        if len(mubah) >= 51:
-            break
-
-    browser.close()
-
-mubah = sorted([x for x in mubah if len(x)>=2])
-print(f"\nFINAL {len(mubah)} مباح LIVE: {mubah}")
-
-with open("halal_pairs.json","w",encoding="utf-8") as f:
-    json.dump({
-        "count": len(mubah),
-        "coins": mubah,
-        "pairs": [f"{c}/USDT" for c in mubah]
-    }, f, indent=2, ensure_ascii=False)
+mubah = [s for s,c in all_coins.items() if c.get("judgement")==0 or c.get("judgment")==0 or c.get("is_halal")]
+print(f"\nTOTAL {len(all_coins)} coins from API")
+print(f"FINAL {len(mubah)} مباح: {sorted(mubah)}")
