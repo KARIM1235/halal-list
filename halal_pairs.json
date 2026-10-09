@@ -1,31 +1,9 @@
 {
-  "updated": "2026-10-09 00:39 LIVE UTC",
+  "updated": "2026-10-09 00:46 LIVE UTC",
   "live": true,
-  "source": "LIVE cryptohalal.cc - 7 مباح - scanned reports + API",
-  "count": 7,
-  "coins": [
-    "BTC",
-    "DOGE",
-    "ETH",
-    "SOL",
-    "TRX",
-    "XRP",
-    "ZEC"
-  ],
-  "pairs": [
-    "BTC/USDT",
-    "DOGE/USDT",
-    "ETH/USDT",
-    "SOL/USDT",
-    "TRX/USDT",
-    "XRP/USDT",
-    "ZEC/USDT"
-  ],
-  "debug_apis": [
-    "https://www.cryptohalal.cc/api/market-overview",
-    "https://api.cryptohalal.cc/api/home",
-    "https://api.cryptohalal.cc/api/services",
-    "https://api.cryptohalal.cc/api/info",
-    "https://api.cryptohalal.cc/api/researches?page=1&limit=3"
-  ]
+  "source": "LIVE https://api.cryptohalal.cc/api/coins - 0 مباح from 51 total",
+  "total_scanned": 51,
+  "count": 0,
+  "coins": [],
+  "pairs": []
 }
