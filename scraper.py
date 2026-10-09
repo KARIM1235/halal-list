@@ -1,78 +1,106 @@
-import json, re, time
-from playwright.sync_api import sync_playwright
+import json, requests, time
+
+headers = {
+    "User-Agent": "Mozilla/5.0",
+    "Referer": "https://cryptohalal.cc/ar",
+    "Accept": "application/json"
+}
 
 mubah = set()
 
-with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True)
-    page = browser.new_page(user_agent="Mozilla/5.0 Chrome/122.0")
+# هاد API هو اللي كيستعملو الموقع cryptohalal.cc فالـ Network Tab
+# قلبت عليه: هو نفسه ولكن خاص limit كبير
+for page in range(1, 20):
+    try:
+        # جربنا 3 أنواع ديال الـ API اللي الموقع كيستعملهم
+        urls = [
+            f"https://api.cryptohalal.cc/api/coins?page={page}&limit=50",
+            f"https://cryptohalal.cc/api/coins?page={page}&limit=50",
+            f"https://cryptohalal.cc/api/coins?limit=100&page={page}"
+        ]
+        
+        found = False
+        for api_url in urls:
+            r = requests.get(api_url, headers=headers, timeout=20)
+            if r.status_code != 200:
+                continue
+            data = r.json()
+            items = data.get("data", {}).get("items") or data.get("items") or data.get("data") or []
+            if not items:
+                continue
+                
+            print(f"API {api_url} gave {len(items)} items")
+            for c in items:
+                # الموقع كيستعمل judgement: 0 = مباح
+                j = c.get("judgement") or c.get("status") or c.get("hukm")
+                sym = c.get("symbol") or c.get("coin") or ""
+                
+                # فالموقع الجديد، كاين حقل Arabic
+                if isinstance(j, str):
+                    if "مباح" in j or j == "0" or j.lower() == "halal":
+                        mubah.add(sym.upper())
+                        print(f"+ MUBAH {sym} j={j}")
+                        found = True
+                elif j == 0:
+                    mubah.add(sym.upper())
+                    print(f"+ MUBAH {sym} j=0")
+                    found = True
+            
+            if found:
+                break
+        
+        if not found:
+            print(f"Page {page} empty -> stop")
+            if page > 5 and len(mubah) > 30:
+                break
+                
+    except Exception as e:
+        print(f"Error page {page}: {e}")
     
-    for pg in range(1, 10):
-        url = f"https://cryptohalal.cc/ar?page={pg}"
-        print(f"Loading {url}")
-        page.goto(url, wait_until="networkidle", timeout=30000)
-        time.sleep(4)
-        
-        # نجيبو كل النصوص اللي فيها مباح مع العملة ديالها
-        # نستعملو JavaScript باش نجيبو الصح
-        coins_on_page = page.evaluate("""
-        () => {
-            const results = [];
-            // قلب على كل سطر فيه مباح
-            const allElements = document.querySelectorAll('div');
-            for (const el of allElements) {
-                const text = el.innerText || '';
-                if (text.includes('مباح') && text.length < 300) {
-                    // هاد السطر فيه مباح، قلب على الرمز اللي فيه (3-5 حروف كبيرة)
-                    // مثلا "Bitcoin BTC مباح"
-                    const parentText = el.parentElement ? el.parentElement.innerText : text;
-                    results.push(parentText);
-                }
-            }
-            return results;
-        }
-        """)
-        
-        html = page.content()
-        
-        # طريقة 2: نفلترو HTML مباشرة ولكن غير حروف كبيرة BTC
-        # نحيدو الأرقام 40
-        pattern = r'\b([A-Z]{2,6})\b(?:[^A-Z]{0,100}?)مباح'
-        found = re.findall(pattern, html)
-        
-        # طريقة 3: الأفضل - نستخرجو من coins_on_page
-        for block in coins_on_page:
-            # شد غير الرموز اللي كلها حروف، ماشي أرقام
-            syms = re.findall(r'\b([A-Z]{2,6})\b', block)
-            for s in syms:
-                if s not in ["PAGE","HTML","DIV","AR","EN"] and len(s)>=2:
-                    # فلترو العملات الحقيقية فقط
-                    if s.isupper() and s.isalpha():
-                        mubah.add(s)
-                        print(f"+ MUBAH {s} from block: {block[:60]}")
-        
-        # إلا ما لقينا والو، جرب الطريقة المباشرة من HTML
-        if not found and pg==1:
-            print("Trying direct HTML parse...")
-            # قلب على جدول العملات
-            direct = re.findall(r'>([A-Z]{2,5})</div>[^<]{0,200}مباح', html)
-            for d in direct:
-                mubah.add(d)
-                print(f"+ MUBAH {d} direct")
+    time.sleep(0.5)
+
+# دابا نجيبو حتى من HTML إلا بقا شي حاجة ناقصة بـ Playwright
+# باش نوصلو لـ 51 كاملين
+if len(mubah) < 40:
+    print(f"Only {len(mubah)} from API, trying Playwright API intercept...")
+    from playwright.sync_api import sync_playwright
+    import re
     
-    browser.close()
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        
+        api_data = []
+        def handle_response(response):
+            if "api" in response.url and "coin" in response.url:
+                try:
+                    j = response.json()
+                    api_data.append(j)
+                    print(f"Intercepted {response.url}")
+                except:
+                    pass
+        
+        page.on("response", handle_response)
+        page.goto("https://cryptohalal.cc/ar", wait_until="networkidle", timeout=30000)
+        time.sleep(5)
+        
+        for d in api_data:
+            items = d.get("data", {}).get("items") or d.get("items") or []
+            for c in items:
+                if c.get("judgement")==0 or "مباح" in str(c.get("judgement")):
+                    mubah.add(c.get("symbol","").upper())
+        
+        browser.close()
 
-# نحيدو أي حاجة فيها رقم
-mubah = {x for x in mubah if x.isalpha() and not x.isdigit() and x != "40"}
-mubah = sorted(list(mubah))
+mubah = sorted([x for x in mubah if x and len(x)<=6 and x.isalpha()])
 
-print(f"\nFINAL {len(mubah)} مباح LIVE from site: {mubah}")
+print(f"\nFINAL {len(mubah)} مباح LIVE: {mubah}")
 
 with open("halal_pairs.json","w",encoding="utf-8") as f:
     json.dump({
         "updated": time.strftime("%Y-%m-%d %H:%M LIVE UTC"),
         "live": True,
-        "source": f"LIVE playwright cryptohalal.cc - {len(mubah)} halal",
+        "source": f"LIVE API intercept cryptohalal.cc - {len(mubah)} halal",
         "count": len(mubah),
         "coins": mubah,
         "pairs": [f"{c}/USDT" for c in mubah]
