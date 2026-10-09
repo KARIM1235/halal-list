@@ -13,12 +13,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install playwright
-      - run: playwright install chromium --with-deps
+      - run: pip install requests
       - run: python scraper.py
       - run: |
           git config user.name "bybit-halal-bot"
           git config user.email "bot@bybit.com"
           git add halal_pairs.json
-          git commit -m "auto update bybit islamic $(date -u)" || exit 0
+          git commit -m "auto update bybit islamic via API $(date -u)" || exit 0
           git push
