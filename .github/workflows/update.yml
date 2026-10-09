@@ -20,7 +20,8 @@ jobs:
           PIF_EMAIL: ${{ secrets.PIF_EMAIL }}
           PIF_PASSWORD: ${{ secrets.PIF_PASSWORD }}
         run: python scraper.py
-      - run: |
+      - name: Commit and push
+        run: |
           git config user.name "halal-bot"
           git config user.email "bot@example.com"
           git add halal_pairs.json
