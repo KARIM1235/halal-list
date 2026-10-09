@@ -13,17 +13,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install playwright requests
+      - run: pip install playwright
       - run: playwright install --with-deps chromium
-      - name: Run scraper LIVE from your sites
-        env:
-          PIF_EMAIL: ${{ secrets.PIF_EMAIL }}
-          PIF_PASSWORD: ${{ secrets.PIF_PASSWORD }}
-        run: python scraper.py
-      - name: Commit and push
-        run: |
+      - run: python scraper.py
+      - run: |
           git config user.name "halal-bot"
           git config user.email "bot@example.com"
           git add halal_pairs.json
-          git commit -m "live PIF+CH $(date -u)" || exit 0
+          git commit -m "live all mubah $(date -u)" || exit 0
           git push
