@@ -19,5 +19,5 @@ jobs:
           git config user.name "bybit-halal-bot"
           git config user.email "bot@bybit.com"
           git add halal_pairs.json
-          git commit -m "auto update bybit islamic via API $(date -u)" || exit 0
+          git commit -m "auto update $(date -u)" || exit 0
           git push
