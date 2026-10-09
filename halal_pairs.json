@@ -1,30 +1,5 @@
 {
-  "updated": "2026-10-09 02:14 LIVE VISUAL",
-  "live": true,
-  "source": "LIVE visual AI cryptohalal.cc - 10 halal",
-  "count": 10,
-  "coins": [
-    "BNB",
-    "BTC",
-    "DOGE",
-    "ETH",
-    "SOL",
-    "TRON",
-    "TRX",
-    "USDC",
-    "XRP",
-    "ZEC"
-  ],
-  "pairs": [
-    "BNB/USDT",
-    "BTC/USDT",
-    "DOGE/USDT",
-    "ETH/USDT",
-    "SOL/USDT",
-    "TRON/USDT",
-    "TRX/USDT",
-    "USDC/USDT",
-    "XRP/USDT",
-    "ZEC/USDT"
-  ]
+  "count": 0,
+  "coins": [],
+  "pairs": []
 }
