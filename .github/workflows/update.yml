@@ -2,7 +2,7 @@ name: update halal
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 * * * *'  # كل ساعة
+    - cron: '0 * * * *'
 permissions:
   contents: write
 jobs:
@@ -19,5 +19,5 @@ jobs:
           git config user.name "halal-bot"
           git config user.email "bot@example.com"
           git add halal_pairs.json
-          git commit -m "live all mubah hourly $(date -u)" || exit 0
+          git commit -m "hourly mubah $(date -u)" || exit 0
           git push
