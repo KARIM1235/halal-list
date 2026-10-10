@@ -1,14 +1,13 @@
 {
-  "updated": "2026-10-10 09:19 UTC v48",
+  "updated": "2026-10-10 15:40 UTC v48",
   "live": true,
   "source": "www.bybit.com + cryptohalal.cc - bypass CloudFront",
   "bybit_count": 0,
-  "halal_count": 35,
-  "count": 35,
+  "halal_count": 34,
+  "count": 34,
   "coins": [
     "ADA",
     "ALGO",
-    "APT",
     "ARB",
     "ATOM",
     "AVAX",
@@ -45,7 +44,6 @@
   "pairs": [
     "ADA/USDT",
     "ALGO/USDT",
-    "APT/USDT",
     "ARB/USDT",
     "ATOM/USDT",
     "AVAX/USDT",
