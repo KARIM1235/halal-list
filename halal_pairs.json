@@ -1,10 +1,10 @@
 {
-  "updated": "2026-11-10 02:30 UTC v48",
+  "updated": "2026-11-10 10:42 UTC v48",
   "live": true,
   "source": "www.bybit.com + cryptohalal.cc - bypass CloudFront",
   "bybit_count": 0,
-  "halal_count": 32,
-  "count": 32,
+  "halal_count": 33,
+  "count": 33,
   "coins": [
     "ADA",
     "ALGO",
@@ -37,7 +37,8 @@
     "XLM",
     "XMR",
     "XRP",
-    "ZEC"
+    "ZEC",
+    "ZRO"
   ],
   "pairs": [
     "ADA/USDT",
@@ -71,6 +72,7 @@
     "XLM/USDT",
     "XMR/USDT",
     "XRP/USDT",
-    "ZEC/USDT"
+    "ZEC/USDT",
+    "ZRO/USDT"
   ]
 }
