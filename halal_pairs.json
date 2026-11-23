@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-22 21:28 UTC v48",
+  "updated": "2026-11-23 02:10 UTC v48",
   "live": true,
   "source": "www.bybit.com + cryptohalal.cc - bypass CloudFront",
   "bybit_count": 0,
@@ -27,7 +27,6 @@
     "QNT",
     "RENDER",
     "SOL",
-    "STX",
     "SUI",
     "TAO",
     "TRX",
@@ -38,7 +37,8 @@
     "XLM",
     "XMR",
     "XRP",
-    "ZEC"
+    "ZEC",
+    "ZRO"
   ],
   "pairs": [
     "ADA/USDT",
@@ -62,7 +62,6 @@
     "QNT/USDT",
     "RENDER/USDT",
     "SOL/USDT",
-    "STX/USDT",
     "SUI/USDT",
     "TAO/USDT",
     "TRX/USDT",
@@ -73,6 +72,7 @@
     "XLM/USDT",
     "XMR/USDT",
     "XRP/USDT",
-    "ZEC/USDT"
+    "ZEC/USDT",
+    "ZRO/USDT"
   ]
 }
