@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-23 23:17 UTC v48",
+  "updated": "2026-11-24 08:05 UTC v48",
   "live": true,
   "source": "www.bybit.com + cryptohalal.cc - bypass CloudFront",
   "bybit_count": 0,
@@ -17,6 +17,7 @@
     "DOT",
     "ETC",
     "ETH",
+    "FIL",
     "GRAM",
     "HBAR",
     "ICP",
@@ -38,8 +39,7 @@
     "XLM",
     "XMR",
     "XRP",
-    "ZEC",
-    "ZRO"
+    "ZEC"
   ],
   "pairs": [
     "ADA/USDT",
@@ -53,6 +53,7 @@
     "DOT/USDT",
     "ETC/USDT",
     "ETH/USDT",
+    "FIL/USDT",
     "GRAM/USDT",
     "HBAR/USDT",
     "ICP/USDT",
@@ -74,7 +75,6 @@
     "XLM/USDT",
     "XMR/USDT",
     "XRP/USDT",
-    "ZEC/USDT",
-    "ZRO/USDT"
+    "ZEC/USDT"
   ]
 }
